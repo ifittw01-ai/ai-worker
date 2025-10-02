@@ -1,0 +1,20 @@
+{
+  "name": "google-search-api",
+  "version": "1.0.0",
+  "description": "Google Custom Search API script to fetch search results",
+  "main": "search.js",
+  "scripts": {
+    "start": "node search.js"
+  },
+  "keywords": [
+    "google",
+    "search",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
