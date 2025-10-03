@@ -1,155 +1,153 @@
-require('dotenv').config();
 const axios = require('axios');
+const readline = require('readline');
+require('dotenv').config();
 
-// Configuration
-const API_KEY = process.env.GOOGLE_API_KEY;
-const SEARCH_ENGINE_ID = process.env.SEARCH_ENGINE_ID;
-const SEARCH_QUERY = 'Interior Design Company';
-const SEARCH_LOCATION = 'Malaysia';
-const RESULTS_PER_PAGE = 10; // Google's API limit per request
-const TOTAL_RESULTS = 30;
+// Create readline interface for user input
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-/**
- * Fetch Google search results using Custom Search JSON API
- * @param {string} query - Search query
- * @param {number} startIndex - Starting index for results (1-based)
- * @returns {Promise<Object>} - Search results
- */
-async function fetchSearchResults(query, startIndex = 1) {
+// Function to prompt user for input
+function question(prompt) {
+  return new Promise((resolve) => {
+    rl.question(prompt, (answer) => {
+      resolve(answer);
+    });
+  });
+}
+
+// Function to perform Google Custom Search
+async function googleSearch(query, location) {
   try {
+    const apiKey = process.env.GOOGLE_API_KEY;
+    const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+
+    if (!apiKey || !searchEngineId) {
+      console.error('Error: Please set GOOGLE_API_KEY and GOOGLE_SEARCH_ENGINE_ID in .env file');
+      return null;
+    }
+
+    // Combine query with location
+    const searchQuery = `${query} ${location}`;
+    
+    console.log(`\nSearching for: "${searchQuery}"...\n`);
+
     const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
       params: {
-        key: API_KEY,
-        cx: SEARCH_ENGINE_ID,
-        q: query,
-        start: startIndex,
-        gl: 'my', // Country code for Malaysia
-        cr: 'countryMY', // Restrict results to Malaysia
-        num: RESULTS_PER_PAGE
+        key: apiKey,
+        cx: searchEngineId,
+        q: searchQuery,
+        num: 10 // Number of results to return
       }
     });
 
     return response.data;
   } catch (error) {
-    if (error.response) {
-      console.error('API Error:', error.response.data.error);
-    } else {
-      console.error('Error:', error.message);
-    }
-    throw error;
+    console.error('Error performing search:', error.response?.data?.error?.message || error.message);
+    return null;
   }
 }
 
-/**
- * Get multiple pages of search results
- * @param {string} query - Search query
- * @param {number} totalResults - Total number of results to fetch
- * @returns {Promise<Array>} - Array of all search results
- */
-async function getAllSearchResults(query, totalResults) {
-  const allResults = [];
-  const numberOfRequests = Math.ceil(totalResults / RESULTS_PER_PAGE);
-
-  console.log(`\n${'='.repeat(80)}`);
-  console.log(`Searching for: "${query}"`);
-  console.log(`Location: ${SEARCH_LOCATION}`);
-  console.log(`Fetching ${totalResults} results (${numberOfRequests} API requests)...`);
-  console.log(`${'='.repeat(80)}\n`);
-
-  for (let i = 0; i < numberOfRequests; i++) {
-    const startIndex = i * RESULTS_PER_PAGE + 1;
-    console.log(`Fetching results ${startIndex} to ${Math.min(startIndex + RESULTS_PER_PAGE - 1, totalResults)}...`);
-
-    try {
-      const data = await fetchSearchResults(query, startIndex);
-
-      if (data.items && data.items.length > 0) {
-        allResults.push(...data.items);
-        console.log(`✓ Successfully fetched ${data.items.length} results\n`);
-      } else {
-        console.log('⚠ No more results available\n');
-        break;
-      }
-
-      // Add a small delay between requests to avoid rate limiting
-      if (i < numberOfRequests - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    } catch (error) {
-      console.error(`Failed to fetch results starting at index ${startIndex}`);
-      break;
-    }
+// Function to display search results
+function displayResults(data) {
+  if (!data || !data.items || data.items.length === 0) {
+    console.log('No results found.');
+    return;
   }
 
-  return allResults.slice(0, totalResults);
-}
+  console.log(`\n========== SEARCH RESULTS (${data.searchInformation.totalResults} total) ==========\n`);
 
-/**
- * Display search results in a formatted way
- * @param {Array} results - Array of search results
- */
-function displayResults(results) {
-  console.log(`${'='.repeat(80)}`);
-  console.log(`SEARCH RESULTS (Total: ${results.length})`);
-  console.log(`${'='.repeat(80)}\n`);
-
-  results.forEach((item, index) => {
+  data.items.forEach((item, index) => {
     console.log(`${index + 1}. ${item.title}`);
-    console.log(`   URL: ${item.link}`);
+    console.log(`   Link: ${item.link}`);
     console.log(`   Snippet: ${item.snippet}`);
-    if (item.pagemap && item.pagemap.metatags && item.pagemap.metatags[0]) {
-      const metatags = item.pagemap.metatags[0];
-      if (metatags['og:description']) {
-        console.log(`   Description: ${metatags['og:description']}`);
-      }
-    }
     console.log('');
   });
 
-  console.log(`${'='.repeat(80)}\n`);
+  console.log('======================================\n');
 }
 
-/**
- * Main function
- */
-async function main() {
-  // Validate environment variables
-  if (!API_KEY) {
-    console.error('Error: GOOGLE_API_KEY is not set in .env file');
-    console.log('\nPlease follow these steps:');
-    console.log('1. Go to https://console.cloud.google.com/');
-    console.log('2. Create a new project or select an existing one');
-    console.log('3. Enable the Custom Search API');
-    console.log('4. Create credentials (API Key)');
-    console.log('5. Add the API key to your .env file');
-    process.exit(1);
-  }
+// Function to save results to file
+async function saveResults(data, query, location) {
+  const fs = require('fs');
+  const filename = 'search_results.json';
+  
+  const saveData = {
+    searchQuery: `${query} ${location}`,
+    timestamp: new Date().toISOString(),
+    results: data.items || []
+  };
 
-  if (!SEARCH_ENGINE_ID) {
-    console.error('Error: SEARCH_ENGINE_ID is not set in .env file');
-    console.log('\nPlease follow these steps:');
-    console.log('1. Go to https://programmablesearchengine.google.com/');
-    console.log('2. Create a new search engine');
-    console.log('3. Configure it to search the entire web');
-    console.log('4. Copy the Search Engine ID');
-    console.log('5. Add the Search Engine ID to your .env file');
-    process.exit(1);
-  }
+  fs.writeFileSync(filename, JSON.stringify(saveData, null, 2));
+  console.log(`Results saved to ${filename}\n`);
+}
+
+// Main function
+async function main() {
+  console.log('===========================================');
+  console.log('   Google Custom Search API Tool');
+  console.log('===========================================\n');
 
   try {
-    const results = await getAllSearchResults(SEARCH_QUERY, TOTAL_RESULTS);
-    displayResults(results);
+    // Ask for search keyword
+    const keyword = await question('Enter search keyword: ');
+    
+    if (!keyword.trim()) {
+      console.log('Search keyword cannot be empty!');
+      rl.close();
+      return;
+    }
 
-    // Optionally save results to a JSON file
-    const fs = require('fs');
-    const outputFile = 'search_results.json';
-    fs.writeFileSync(outputFile, JSON.stringify(results, null, 2));
-    console.log(`Results saved to ${outputFile}`);
+    // Ask for search location
+    const location = await question('Enter search location: ');
+    
+    if (!location.trim()) {
+      console.log('Search location cannot be empty!');
+      rl.close();
+      return;
+    }
+
+    // Perform search
+    const results = await googleSearch(keyword, location);
+
+    if (results) {
+      // Display results
+      displayResults(results);
+
+      // Ask if user wants to save results
+      const saveChoice = await question('Do you want to save the results to a file? (yes/no): ');
+      
+      if (saveChoice.toLowerCase() === 'yes' || saveChoice.toLowerCase() === 'y') {
+        await saveResults(results, keyword, location);
+      }
+
+      // Ask if user wants to search again
+      const continueChoice = await question('Do you want to perform another search? (yes/no): ');
+      
+      if (continueChoice.toLowerCase() === 'yes' || continueChoice.toLowerCase() === 'y') {
+        rl.close();
+        // Restart the readline interface
+        const newRl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+        Object.assign(rl, newRl);
+        await main();
+      } else {
+        console.log('Thank you for using the search tool!');
+        rl.close();
+      }
+    } else {
+      console.log('Search failed. Please try again.');
+      rl.close();
+    }
   } catch (error) {
-    console.error('Failed to complete search:', error.message);
-    process.exit(1);
+    console.error('An error occurred:', error.message);
+    rl.close();
   }
 }
 
-// Run the script
+// Run the program
 main();
+

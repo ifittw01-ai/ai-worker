@@ -1,15 +1,17 @@
 {
   "name": "google-search-api",
   "version": "1.0.0",
-  "description": "Google Custom Search API script to fetch search results",
+  "description": "A Google Custom Search API tool with dynamic user input",
   "main": "search.js",
   "scripts": {
-    "start": "node search.js"
+    "start": "node search.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "google",
     "search",
-    "api"
+    "api",
+    "custom-search"
   ],
   "author": "",
   "license": "ISC",
@@ -18,3 +20,4 @@
     "dotenv": "^16.3.1"
   }
 }
+
