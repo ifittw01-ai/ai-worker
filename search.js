@@ -183,7 +183,7 @@ async function saveToGoogleSheets(data, query, location) {
     }
 
     // Prepare header row (only if sheet is empty)
-    const headerRow = ['Timestamp', 'Search Query', 'Title', 'Link', 'Snippet'];
+    const headerRow = ['Timestamp', 'Search Query', 'Title', 'Link', 'Snippet', 'Company Name', 'Telephone', 'Contact Email'];
     
     // Prepare data rows
     const timestamp = new Date().toISOString();
@@ -202,19 +202,19 @@ async function saveToGoogleSheets(data, query, location) {
     try {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `${sheetName}!A1:E1`,
+        range: `${sheetName}!A1:H1`,
       });
       needsHeader = !response.data.values || response.data.values.length === 0;
     } catch (error) {
       needsHeader = true;
     }
 
-    // Append data
+    // Append data (leave columns F, G, H empty for now - will be filled by extract_contacts.js)
     const values = needsHeader ? [headerRow, ...rows] : rows;
     
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:E`,
+      range: `${sheetName}!A:H`,
       valueInputOption: 'RAW',
       resource: {
         values,
