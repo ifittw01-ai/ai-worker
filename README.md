@@ -23,6 +23,13 @@ A powerful Node.js application suite for extracting data from the web:
 - **Timeout protection**: Skips websites taking >20 seconds
 - Progress tracking with detailed statistics
 
+### AI Email Generator (`generate_email.js`)
+- **Analyzes company websites** and generates personalized outreach emails
+- **AI-powered admiration**: Finds specific things to praise about the company
+- Uses DeepSeek (free model) via OpenRouter
+- **Structured output** for reliable results
+- Professional email template with proper formatting
+
 ## Setup
 
 1. Install dependencies:
@@ -87,6 +94,26 @@ node extract_contacts.js
 ```
 
 For detailed setup and usage, see [EXTRACT_CONTACTS_GUIDE.md](EXTRACT_CONTACTS_GUIDE.md)
+
+### AI Email Generator
+
+Generate personalized outreach emails:
+```bash
+node generate_email.js <URL> <CompanyName>
+```
+
+**Example:**
+```bash
+node generate_email.js https://firecrawl.dev Firecrawl
+```
+
+This will:
+1. 📄 Fetch and analyze the company website
+2. 🤖 Use AI to find something specific to admire
+3. ✉️ Generate a personalized professional email
+4. 💾 Save the email to a file
+
+For detailed guide, see [EMAIL_GENERATOR_GUIDE.md](EMAIL_GENERATOR_GUIDE.md)
 
 ## 🔄 Complete Workflow
 
