@@ -5,7 +5,11 @@ const Firecrawl = require('@mendable/firecrawl-js').default;
 const OpenAI = require('openai');
 const cheerio = require('cheerio');
 const path = require('path');
-require('dotenv').config();
+
+// Only load dotenv in non-production environments
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const app = express();
 const port = 3000;
@@ -14,40 +18,67 @@ const port = 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize clients
-const firecrawl = new Firecrawl({
-  apiKey: process.env.FIRECRAWL_API_KEY
-});
+// Initialize clients with error handling
+let firecrawl = null;
+let openrouter = null;
 
-const openrouter = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
+try {
+  if (process.env.FIRECRAWL_API_KEY) {
+    firecrawl = new Firecrawl({
+      apiKey: process.env.FIRECRAWL_API_KEY
+    });
+  }
+} catch (error) {
+  console.warn('Firecrawl initialization failed:', error.message);
+}
+
+try {
+  if (process.env.OPENROUTER_API_KEY) {
+    openrouter = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: process.env.OPENROUTER_API_KEY,
+    });
+  }
+} catch (error) {
+  console.warn('OpenRouter initialization failed:', error.message);
+}
 
 // Google Sheets authentication
 async function getGoogleSheetsClient() {
   try {
-    const fs = require('fs');
     let auth;
 
-    if (fs.existsSync('.google-credentials.json')) {
-      const credentials = JSON.parse(fs.readFileSync('.google-credentials.json', 'utf8'));
-      auth = new google.auth.JWT({
-        email: credentials.client_email,
-        key: credentials.private_key,
-        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-      });
-    } else if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+    // In production (Vercel), use environment variables
+    // In development, try file first, then fall back to env vars
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const fs = require('fs');
+        if (fs.existsSync('.google-credentials.json')) {
+          const credentials = JSON.parse(fs.readFileSync('.google-credentials.json', 'utf8'));
+          auth = new google.auth.JWT({
+            email: credentials.client_email,
+            key: credentials.private_key,
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+          });
+          return google.sheets({ version: 'v4', auth });
+        }
+      } catch (fsError) {
+        console.log('No credentials file found, using environment variables');
+      }
+    }
+
+    // Use environment variables (for Vercel or as fallback)
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
       auth = new google.auth.JWT({
         email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
         key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
-    } else {
-      return null;
+      return google.sheets({ version: 'v4', auth });
     }
 
-    return google.sheets({ version: 'v4', auth });
+    console.warn('Google Sheets credentials not configured');
+    return null;
   } catch (error) {
     console.error('Error authenticating with Google Sheets:', error.message);
     return null;
@@ -97,6 +128,38 @@ async function getExistingLinksFromSheet() {
   }
 }
 
+// Root endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    name: 'AI Worker API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      search: 'POST /api/search',
+      extractContacts: 'POST /api/extract-contacts',
+      generateEmails: 'POST /api/generate-emails',
+      sheetCount: 'GET /api/sheet-count'
+    }
+  });
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const status = {
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    services: {
+      googleSearch: !!(process.env.GOOGLE_API_KEY && process.env.GOOGLE_SEARCH_ENGINE_ID),
+      googleSheets: !!(process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SPREADSHEET_ID),
+      firecrawl: !!process.env.FIRECRAWL_API_KEY,
+      openrouter: !!process.env.OPENROUTER_API_KEY
+    }
+  };
+  res.json(status);
+});
+
 // API endpoint: Perform search
 app.post('/api/search', async (req, res) => {
   try {
@@ -110,7 +173,7 @@ app.post('/api/search', async (req, res) => {
     const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
 
     if (!apiKey || !searchEngineId) {
-      return res.status(500).json({ error: 'Google API credentials not configured' });
+      return res.status(500).json({ error: 'Google API credentials not configured. Please set GOOGLE_API_KEY and GOOGLE_SEARCH_ENGINE_ID environment variables.' });
     }
 
     const searchQuery = `${keyword} ${region}`;
@@ -411,6 +474,10 @@ app.post('/api/extract-contacts', async (req, res) => {
       return res.status(400).json({ error: 'Start and end indices are required' });
     }
 
+    if (!firecrawl) {
+      return res.status(500).json({ error: 'Firecrawl API not configured. Please set FIRECRAWL_API_KEY environment variable.' });
+    }
+
     const sheets = await getGoogleSheetsClient();
     if (!sheets) {
       return res.status(500).json({ error: 'Failed to authenticate with Google Sheets' });
@@ -638,6 +705,10 @@ app.post('/api/generate-emails', async (req, res) => {
 
     if (!startIndex || !endIndex) {
       return res.status(400).json({ error: 'Start and end indices are required' });
+    }
+
+    if (!openrouter) {
+      return res.status(500).json({ error: 'OpenRouter API not configured. Please set OPENROUTER_API_KEY environment variable.' });
     }
 
     const sheets = await getGoogleSheetsClient();

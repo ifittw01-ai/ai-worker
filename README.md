@@ -316,6 +316,37 @@ Do you want to perform another search? (yes/no): no
 Thank you for using the search tool!
 ```
 
+## 🚀 Deployment to Vercel
+
+Deploy your AI Worker to the cloud for 24/7 access:
+
+### Quick Deploy
+
+1. **Push to GitHub/GitLab/Bitbucket**
+2. **Import to Vercel** - Connect your repository
+3. **Set Environment Variables** - See [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md) for the complete list
+4. **Deploy!** - Vercel will automatically build and deploy
+
+### ⚠️ Fixed Common Deployment Issues
+
+If you encountered a **500 FUNCTION_INVOCATION_FAILED** error:
+- ✅ **FIXED**: Updated `server.js` to be fully Vercel-compatible
+- ✅ **FIXED**: Removed file system dependencies
+- ✅ **FIXED**: Added proper environment variable handling
+- ✅ **FIXED**: Added health check endpoint
+
+### 📚 Deployment Guides
+
+- **Quick Start**: [VERCEL_ENV_SETUP.md](VERCEL_ENV_SETUP.md) - Copy-paste environment variables
+- **Troubleshooting**: [VERCEL_FIX_GUIDE.md](VERCEL_FIX_GUIDE.md) - Fix deployment errors
+- **Original Guide**: [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) - Full deployment documentation
+
+### 🏥 Health Check
+
+After deployment, visit: `https://your-app.vercel.app/api/health`
+
+This will show the status of all services and help diagnose any configuration issues.
+
 ## Notes
 
 - The free tier of Google Custom Search API allows 100 queries per day
