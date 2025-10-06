@@ -118,7 +118,7 @@ async function readSearchResults() {
     // Read all data from the sheet
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:H`,
+      range: `${sheetName}!A:J`,
     });
 
     const rows = response.data.values;
@@ -138,7 +138,11 @@ async function readSearchResults() {
       snippet: row[4] || '',
       companyName: row[5] || '', // Existing data if any
       telephone: row[6] || '',
-      contactEmail: row[7] || ''
+      contactEmail: row[7] || '',
+      salesEmail: row[8] || '',
+      ifEverExtract: row[9] || 0, // Column J: if ever extract flag
+      hasExistingData: !!(row[5] || row[6] || row[7]), // Check if any contact data exists
+      hasBeenExtracted: (row[9] == 1) // Check if already extracted (as string or number)
     }));
 
     console.log(`Found ${results.length} search results in the sheet.\n`);
@@ -232,13 +236,24 @@ async function extractContactFromWebsite(url, maxRetries = 2, timeoutSeconds = 2
 // Function to update Google Sheets with extracted data
 async function updateSheetRow(sheets, spreadsheetId, sheetName, rowIndex, companyName, telephone, contactEmail) {
   try {
-    // Update columns F, G, H (Company Name, Telephone, Contact Email)
+    // Update columns F, G, H, J (Company Name, Telephone, Contact Email, if ever extract)
+    // Note: Column I (Sales Email) is skipped, will be filled by generate_email.js
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `${sheetName}!F${rowIndex}:H${rowIndex}`,
       valueInputOption: 'RAW',
       resource: {
         values: [[companyName, telephone, contactEmail]]
+      }
+    });
+    
+    // Update column J (if ever extract) to 1
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!J${rowIndex}`,
+      valueInputOption: 'RAW',
+      resource: {
+        values: [[1]]
       }
     });
 
@@ -298,6 +313,7 @@ async function processBatch(sheets, spreadsheetId, sheetName, results, startInde
   let successCount = 0;
   let failCount = 0;
   let skippedCount = 0;
+  let skippedExistingData = 0;
   let timeoutCount = 0;
 
   const startTime = Date.now();
@@ -310,6 +326,14 @@ async function processBatch(sheets, spreadsheetId, sheetName, results, startInde
     if (!result.link) {
       console.log(`⏭️  Row ${result.rowIndex}: No link found, skipping...\n`);
       skippedCount++;
+      continue;
+    }
+
+    // Skip if already extracted (check 'if ever extract' flag)
+    if (result.hasBeenExtracted) {
+      console.log(`⏭️  Row ${result.rowIndex}: Already extracted before (if ever extract = 1), skipping...`);
+      console.log(`  Title: ${result.title}\n`);
+      skippedExistingData++;
       continue;
     }
 
@@ -385,6 +409,7 @@ async function processBatch(sheets, spreadsheetId, sheetName, results, startInde
   console.log(`  ⏱️  Timed out (>20s): ${timeoutCount}`);
   console.log(`  ❌ Failed (errors): ${failCount}`);
   console.log(`  ⏭️  Skipped (no link): ${skippedCount}`);
+  console.log(`  📋 Skipped (already extracted): ${skippedExistingData}`);
   console.log(`  📝 Batch total: ${batchResults.length}`);
   console.log(`  ⏰ Batch time: ${totalDuration} minutes`);
   console.log('========================================\n');
@@ -407,6 +432,7 @@ async function processBatch(sheets, spreadsheetId, sheetName, results, startInde
     failCount,
     timeoutCount,
     skippedCount,
+    skippedExistingData,
     totalProcessed: batchResults.length
   };
 }
@@ -449,7 +475,6 @@ async function main() {
   await ensureHeaders(sheets, spreadsheetId, sheetName);
 
   console.log(`📋 Total records available: ${results.length}\n`);
-  console.log(`🔗 View spreadsheet: https://docs.google.com/spreadsheets/d/${spreadsheetId}\n`);
 
   // Interactive batch processing loop
   let continueProcessing = true;
@@ -494,9 +519,7 @@ async function main() {
         console.log('\n' + '='.repeat(50) + '\n');
         continueProcessing = true;
       } else {
-        console.log('\n🎉 處理完成！感謝使用！');
-        console.log(`📊 查看您的 Google Sheet：`);
-        console.log(`   https://docs.google.com/spreadsheets/d/${spreadsheetId}\n`);
+        console.log('\n🎉 處理完成！感謝使用！\n');
         continueProcessing = false;
         rl.close();
       }

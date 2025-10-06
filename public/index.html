@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Worker - Business Development Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .tool-section {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .range-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.secondary {
+            background: #6c757d;
+            margin-top: 12px;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 10px 25px rgba(108, 117, 125, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .result {
+            display: none;
+            padding: 20px;
+            background: #f0fdf4;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .result.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result.error {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        .result h3 {
+            color: #10b981;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+        }
+
+        .result.error h3 {
+            color: #ef4444;
+        }
+
+        .result p {
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .result a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .result a:hover {
+            text-decoration: underline;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-radius: 8px;
+        }
+
+        .info-box p {
+            color: #1e40af;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .process-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .process-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .process-card h3 {
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            font-size: 1.3rem;
+        }
+
+        .process-card h3::before {
+            content: '';
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .process-card p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .open-sheet-btn {
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+        }
+
+        .open-sheet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .open-sheet-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .range-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            .step-label {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AI Worker</h1>
+            <p>Business Development Automation Tool</p>
+        </div>
+
+        <div class="card">
+            <!-- Open Google Sheet Button -->
+            <button class="open-sheet-btn" onclick="openGoogleSheet()" id="openSheetBtn">
+                📊 Open Google Sheet
+            </button>
+
+            <div class="tool-grid">
+                <!-- Tool 1: Search -->
+                <div class="process-card">
+                    <h3>🔍 Search for Companies</h3>
+                    <p>Search Google for companies and save results to your spreadsheet.</p>
+                    
+                    <div class="form-group">
+                        <label for="keyword">Search Keyword</label>
+                        <input type="text" id="keyword" placeholder="e.g., software companies" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="region">Region</label>
+                        <input type="text" id="region" placeholder="e.g., San Francisco" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resultCount">要找到幾筆新資料寫入試算表？ (Target New Records)</label>
+                        <input type="number" id="resultCount" min="1" max="100" value="30" placeholder="目標新增筆數" required>
+                        <small style="color: #666; font-size: 0.85rem; display: block; margin-top: 4px;">
+                            🎯 系統會持續搜尋直到找到這個數量的<strong>新記錄</strong>（自動跳過重複的Link）<br>
+                            預設30筆，最多100筆。如果搜尋結果不足，系統會盡可能找到最多的新記錄。
+                        </small>
+                    </div>
+
+                    <button onclick="performSearch()" id="searchBtn">Start Search</button>
+
+                    <div class="loading" id="searchLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">🔍 正在持續搜尋新記錄，跳過重複項目...<br>這可能需要一些時間，請稍候。</div>
+                    </div>
+
+                    <div class="result" id="searchResult"></div>
+                </div>
+
+                <!-- Tool 2: Extract Contacts -->
+                <div class="process-card">
+                    <h3>📞 Extract Contact Information</h3>
+                    <p>Visit websites and extract company names, phone numbers, and email addresses using AI.</p>
+
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <p><strong>Total records in sheet:</strong> <span id="totalRecordsExtract">Load sheet first</span></p>
+                        <p style="margin-bottom: 0;">Select which entries to process.</p>
+                    </div>
+
+                    <div class="range-inputs">
+                        <div class="form-group">
+                            <label for="extractStart">From Entry</label>
+                            <input type="number" id="extractStart" min="1" value="1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="extractEnd">To Entry</label>
+                            <input type="number" id="extractEnd" min="1" value="10" required>
+                        </div>
+                    </div>
+
+                    <button onclick="extractContacts()" id="extractBtn">Extract Contacts</button>
+
+                    <div class="loading" id="extractLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Extracting contact information... This may take several minutes.</div>
+                    </div>
+
+                    <div class="result" id="extractResult"></div>
+                </div>
+
+                <!-- Tool 3: Generate Emails -->
+                <div class="process-card">
+                    <h3>✉️ Generate Sales Emails</h3>
+                    <p>Create personalized outreach emails based on company information and website content.</p>
+
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <p><strong>Total records in sheet:</strong> <span id="totalRecordsEmail">Load sheet first</span></p>
+                        <p style="margin-bottom: 0;">Select which entries to process.</p>
+                    </div>
+
+                    <div class="range-inputs">
+                        <div class="form-group">
+                            <label for="emailStart">From Entry</label>
+                            <input type="number" id="emailStart" min="1" value="1" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="emailEnd">To Entry</label>
+                            <input type="number" id="emailEnd" min="1" value="10" required>
+                        </div>
+                    </div>
+
+                    <button onclick="generateEmails()" id="emailBtn">Generate Emails</button>
+
+                    <div class="loading" id="emailLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Generating personalized emails... This may take several minutes.</div>
+                    </div>
+
+                    <div class="result" id="emailResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let spreadsheetUrl = null;
+        let totalRecordsCount = 0;
+
+        // Helper function to convert technical errors to friendly messages
+        function getFriendlyErrorMessage(error) {
+            const errorMsg = error.message || '';
+            
+            // Check for common error patterns
+            if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+                return '😔 無法連接到伺服器，請確認網路連線是否正常。';
+            }
+            if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
+                return '⏱️ 請求超時了，請稍後再試。';
+            }
+            if (errorMsg.includes('credentials') || errorMsg.includes('authentication')) {
+                return '🔐 認證失敗，請檢查設定檔案。';
+            }
+            if (errorMsg.includes('not found') || errorMsg.includes('404')) {
+                return '🔍 找不到請求的資源，請確認設定是否正確。';
+            }
+            if (errorMsg.includes('Spreadsheet') || errorMsg.includes('Sheet')) {
+                return '📊 Google 試算表連接失敗，請檢查試算表設定。';
+            }
+            if (errorMsg.includes('API')) {
+                return '🔌 API 連接出現問題，請檢查 API 金鑰設定。';
+            }
+            
+            // Default friendly message
+            return '😔 操作失敗，請稍後再試或聯絡管理員。';
+        }
+
+        // Open Google Sheet
+        function openGoogleSheet() {
+            if (spreadsheetUrl) {
+                window.open(spreadsheetUrl, '_blank');
+            } else {
+                // Try to construct URL from env
+                const spreadsheetId = getSpreadsheetId();
+                if (spreadsheetId) {
+                    spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+                    window.open(spreadsheetUrl, '_blank');
+                } else {
+                    alert('😊 提醒：尚未建立試算表。\n\n請先執行一次搜尋功能，系統會自動建立 Google 試算表。');
+                }
+            }
+        }
+
+        function getSpreadsheetId() {
+            // This will be updated from search results or API calls
+            return null; // Will be set dynamically
+        }
+
+        async function performSearch() {
+            const keyword = document.getElementById('keyword').value.trim();
+            const region = document.getElementById('region').value.trim();
+            const resultCount = parseInt(document.getElementById('resultCount').value) || 30;
+            const saveToSheets = true; // Always save to sheets
+
+            if (!keyword || !region) {
+                alert('😊 提醒：請輸入搜尋關鍵字和地區！');
+                return;
+            }
+
+            // Validate result count
+            if (resultCount < 1 || resultCount > 100) {
+                alert('😊 提醒：搜尋數量必須在 1 到 100 之間！');
+                return;
+            }
+
+            const btn = document.getElementById('searchBtn');
+            const loading = document.getElementById('searchLoading');
+            const result = document.getElementById('searchResult');
+
+            btn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyword, region, saveToSheets, resultCount })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    result.className = 'result active';
+                    
+                    let warningMsg = '';
+                    if (!data.reachedTarget) {
+                        warningMsg = `<p style="color: #f59e0b; font-weight: 600;">⚠️ 未達目標數量，建議更換關鍵字或地區</p>`;
+                    }
+                    
+                    result.innerHTML = `
+                        <h3>✅ 搜尋完成！</h3>
+                        <p><strong>🎯 目標新記錄:</strong> ${resultCount} 筆</p>
+                        <p><strong>✅ 成功找到:</strong> ${data.newRecordsCount} 筆新記錄</p>
+                        <p><strong>📊 總共檢查:</strong> ${data.totalFetched} 筆搜尋結果</p>
+                        <p><strong>⏭️ 跳過重複:</strong> ${data.skippedDuplicates} 筆</p>
+                        ${warningMsg}
+                    `;
+
+                    if (data.sheetUrl) {
+                        spreadsheetUrl = data.sheetUrl;
+                    }
+
+                    // Load sheet count after search
+                    await loadSheetCount();
+                } else {
+                    throw new Error(data.error || 'Search failed');
+                }
+            } catch (error) {
+                result.className = 'result active error';
+                const friendlyMsg = getFriendlyErrorMessage(error);
+                result.innerHTML = `
+                    <h3>❌ 搜尋失敗</h3>
+                    <p>${friendlyMsg}</p>
+                    <p style="font-size: 0.9em; color: #999; margin-top: 12px;">如果問題持續發生，請檢查網路連線和 API 設定。</p>
+                `;
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        async function loadSheetCount() {
+            try {
+                const response = await fetch('/api/sheet-count');
+                const data = await response.json();
+                
+                if (data.success) {
+                    totalRecordsCount = data.count;
+                    document.getElementById('totalRecordsExtract').textContent = data.count;
+                    document.getElementById('totalRecordsEmail').textContent = data.count;
+                    document.getElementById('extractEnd').value = Math.min(10, data.count);
+                    document.getElementById('extractEnd').max = data.count;
+                    document.getElementById('extractStart').max = data.count;
+                    document.getElementById('emailEnd').value = Math.min(10, data.count);
+                    document.getElementById('emailEnd').max = data.count;
+                    document.getElementById('emailStart').max = data.count;
+                }
+            } catch (error) {
+                console.error('Error loading sheet count:', error);
+            }
+        }
+
+        async function extractContacts() {
+            const startIndex = parseInt(document.getElementById('extractStart').value);
+            const endIndex = parseInt(document.getElementById('extractEnd').value);
+
+            if (!startIndex || !endIndex) {
+                alert('😊 提醒：請輸入有效的數字哦！');
+                return;
+            }
+
+            if (startIndex > endIndex) {
+                alert(`😊 提醒：起始位置 (${startIndex}) 不能大於結束位置 (${endIndex}) 哦！\n\n請確認：從第 ${startIndex} 筆到第 ${endIndex} 筆`);
+                return;
+            }
+
+            if (startIndex < 1 || endIndex < 1) {
+                alert('😊 提醒：請輸入大於 0 的數字哦！');
+                return;
+            }
+
+            if (endIndex > totalRecordsCount) {
+                alert(`😊 提醒：結束位置 (${endIndex}) 超過了總記錄數 (${totalRecordsCount})！\n\n目前資料表中只有 ${totalRecordsCount} 筆記錄。`);
+                return;
+            }
+
+            const btn = document.getElementById('extractBtn');
+            const loading = document.getElementById('extractLoading');
+            const result = document.getElementById('extractResult');
+
+            btn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+
+            try {
+                const response = await fetch('/api/extract-contacts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ startIndex, endIndex })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    result.className = 'result active';
+                    result.innerHTML = `
+                        <h3>✅ Extraction Completed!</h3>
+                        <p><strong>Processed:</strong> ${data.processed} records</p>
+                        <p><strong>Successfully extracted:</strong> ${data.successCount}</p>
+                        <p><strong>Failed:</strong> ${data.failCount}</p>
+                        ${data.skippedExistingData > 0 ? `<p><strong>Skipped (already extracted):</strong> ${data.skippedExistingData}</p>` : ''}
+                    `;
+                } else {
+                    throw new Error(data.error || 'Extraction failed');
+                }
+            } catch (error) {
+                result.className = 'result active error';
+                const friendlyMsg = getFriendlyErrorMessage(error);
+                result.innerHTML = `
+                    <h3>❌ 聯絡資訊擷取失敗</h3>
+                    <p>${friendlyMsg}</p>
+                    <p style="font-size: 0.9em; color: #999; margin-top: 12px;">建議：請確認 Google 試算表中有資料，並且 Firecrawl API 金鑰已正確設定。</p>
+                `;
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        async function generateEmails() {
+            const startIndex = parseInt(document.getElementById('emailStart').value);
+            const endIndex = parseInt(document.getElementById('emailEnd').value);
+
+            if (!startIndex || !endIndex) {
+                alert('😊 提醒：請輸入有效的數字哦！');
+                return;
+            }
+
+            if (startIndex > endIndex) {
+                alert(`😊 提醒：起始位置 (${startIndex}) 不能大於結束位置 (${endIndex}) 哦！\n\n請確認：從第 ${startIndex} 筆到第 ${endIndex} 筆`);
+                return;
+            }
+
+            if (startIndex < 1 || endIndex < 1) {
+                alert('😊 提醒：請輸入大於 0 的數字哦！');
+                return;
+            }
+
+            if (endIndex > totalRecordsCount) {
+                alert(`😊 提醒：結束位置 (${endIndex}) 超過了總記錄數 (${totalRecordsCount})！\n\n目前資料表中只有 ${totalRecordsCount} 筆記錄。`);
+                return;
+            }
+
+            const btn = document.getElementById('emailBtn');
+            const loading = document.getElementById('emailLoading');
+            const result = document.getElementById('emailResult');
+
+            btn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+
+            try {
+                const response = await fetch('/api/generate-emails', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ startIndex, endIndex })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    result.className = 'result active';
+                    result.innerHTML = `
+                        <h3>✅ Email Generation Completed!</h3>
+                        <p><strong>Processed:</strong> ${data.processed} records</p>
+                        <p><strong>Successfully generated:</strong> ${data.successCount}</p>
+                        <p><strong>Failed:</strong> ${data.failCount}</p>
+                        ${data.skippedExistingEmail > 0 ? `<p><strong>Skipped (already has email):</strong> ${data.skippedExistingEmail}</p>` : ''}
+                    `;
+                } else {
+                    throw new Error(data.error || 'Email generation failed');
+                }
+            } catch (error) {
+                result.className = 'result active error';
+                const friendlyMsg = getFriendlyErrorMessage(error);
+                result.innerHTML = `
+                    <h3>❌ 郵件生成失敗</h3>
+                    <p>${friendlyMsg}</p>
+                    <p style="font-size: 0.9em; color: #999; margin-top: 12px;">建議：請確認已完成聯絡資訊擷取步驟，並且 OpenRouter API 金鑰已正確設定。</p>
+                `;
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        }
+
+        // Try to load sheet count on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/api/sheet-count');
+                const data = await response.json();
+                if (data.success) {
+                    // Update counts
+                    totalRecordsCount = data.count;
+                    document.getElementById('totalRecordsExtract').textContent = data.count;
+                    document.getElementById('totalRecordsEmail').textContent = data.count;
+                    document.getElementById('extractEnd').value = Math.min(10, data.count);
+                    document.getElementById('extractEnd').max = data.count;
+                    document.getElementById('extractStart').max = data.count;
+                    document.getElementById('emailEnd').value = Math.min(10, data.count);
+                    document.getElementById('emailEnd').max = data.count;
+                    document.getElementById('emailStart').max = data.count;
+                    
+                    // Save spreadsheet URL
+                    if (data.sheetUrl) {
+                        spreadsheetUrl = data.sheetUrl;
+                    }
+                }
+            } catch (error) {
+                console.log('Sheet not available yet. Will be available after first search.');
+            }
+        });
+    </script>
+</body>
+</html>
+

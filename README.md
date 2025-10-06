@@ -3,6 +3,37 @@
 A powerful Node.js application suite for extracting data from the web:
 - **Google Custom Search**: Search and collect results from Google
 - **Firecrawl Extract**: Extract structured data (contact info, company details) from websites
+- **🌐 NEW: Web Interface**: Beautiful browser-based UI for the complete workflow
+
+## 🎨 Two Ways to Use
+
+### Option 1: Web Interface (Recommended) ⭐
+
+Launch a beautiful, modern web interface in your browser:
+
+```bash
+npm run server
+```
+
+Then open `http://localhost:3000` in your browser.
+
+**Features:**
+- 🎯 Step-by-step guided workflow
+- 📊 Real-time progress tracking
+- 🎨 Beautiful modern UI with animations
+- 📱 Mobile responsive design
+- ✅ Visual feedback and result summaries
+
+For detailed instructions, see [WEB_INTERFACE_GUIDE.md](WEB_INTERFACE_GUIDE.md)
+
+### Option 2: Command Line Interface
+
+Use the original command-line tools for more control:
+- `npm start` - Google Search
+- `npm run extract` - Contact Extraction  
+- `npm run email` - Email Generation
+
+(Both methods work with the same Google Sheet!)
 
 ## Features
 
@@ -24,10 +55,13 @@ A powerful Node.js application suite for extracting data from the web:
 - Progress tracking with detailed statistics
 
 ### AI Email Generator (`generate_email.js`)
+- **Automatically reads from Google Sheets** (company names and URLs from previous steps)
 - **Analyzes company websites** and generates personalized outreach emails
-- **AI-powered admiration**: Finds specific things to praise about the company
+- **AI-powered admiration**: Finds specific things to praise about each company
+- **Updates Google Sheets** with generated emails
 - Uses DeepSeek (free model) via OpenRouter
-- **Structured output** for reliable results
+- **Smart retry mechanism**: 3 attempts per email
+- **Interactive batch processing**: Choose which records to process
 - Professional email template with proper formatting
 
 ## Setup
@@ -56,13 +90,16 @@ A powerful Node.js application suite for extracting data from the web:
    GOOGLE_API_KEY=your_actual_api_key
    GOOGLE_SEARCH_ENGINE_ID=your_actual_search_engine_id
    
-   # Google Sheets API (optional)
+   # Google Sheets API (required for full workflow)
    GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@project.iam.gserviceaccount.com
    GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
    GOOGLE_SPREADSHEET_ID=your_spreadsheet_id
    
    # Firecrawl API (for contact extraction)
    FIRECRAWL_API_KEY=fc-YOUR-API-KEY
+   
+   # OpenRouter API (for AI email generation)
+   OPENROUTER_API_KEY=sk-or-v1-YOUR-API-KEY
    ```
 
 ## Usage
@@ -97,21 +134,34 @@ For detailed setup and usage, see [EXTRACT_CONTACTS_GUIDE.md](EXTRACT_CONTACTS_G
 
 ### AI Email Generator
 
-Generate personalized outreach emails:
+Generate personalized outreach emails (reads from Google Sheets):
 ```bash
-node generate_email.js <URL> <CompanyName>
+npm run email
 ```
 
-**Example:**
+or
+
 ```bash
-node generate_email.js https://firecrawl.dev Firecrawl
+node generate_email.js
 ```
 
-This will:
-1. 📄 Fetch and analyze the company website
-2. 🤖 Use AI to find something specific to admire
-3. ✉️ Generate a personalized professional email
-4. 💾 Save the email to a file
+The tool will interactively ask you:
+1. **從第幾筆開始？** (Which record to start from?)
+2. **要處理幾筆？** (How many to process?)
+3. After completion: **還要繼續處理嗎？** (Continue? yes/no)
+
+**What happens:**
+1. 📊 Reads company names and URLs from Google Sheet
+2. 📄 Fetches and analyzes each company website
+3. 🤖 Uses AI to find something specific to admire about each company
+4. ✉️ Generates personalized professional emails
+5. 💾 Updates the Google Sheet with generated emails **immediately** (before processing next record)
+
+**Benefits:**
+- ✅ Automatic retry (3 attempts per email)
+- ✅ Process in batches to control API usage
+- ✅ Resume anytime from where you left off
+- ✅ Immediate updates to Google Sheets
 
 For detailed guide, see [EMAIL_GENERATOR_GUIDE.md](EMAIL_GENERATOR_GUIDE.md)
 
@@ -128,9 +178,9 @@ The program will prompt you to:
 4. Save the results to Google Sheets ✅ **Say yes to enable Step 2**
 
 Your Google Sheet will now have columns:
-- Timestamp | Search Query | Title | Link | Snippet | Company Name | Telephone | Contact Email
+- Timestamp | Search Query | Title | Link | Snippet | Company Name | Telephone | Contact Email | Sales Email
 
-(The last 3 columns will be empty initially)
+(The last 4 columns will be empty initially)
 
 ### Step 2: Extract contact information (Interactive)
 ```bash
@@ -158,6 +208,32 @@ The tool will interactively ask you:
 
 **Result**: Your Google Sheet now has complete data including contact information for each search result!
 
+### Step 3: Generate personalized sales emails (Interactive)
+```bash
+npm run email
+```
+
+The tool will interactively ask you:
+1. **從第幾筆開始？** (Which record to start from? e.g., 1)
+2. **要處理幾筆？** (How many to process? e.g., 5)
+3. After completion: **還要繼續處理嗎？** (Continue? yes/no)
+
+**What happens:**
+1. 📊 Reads company names and website URLs from Google Sheet
+2. 🌐 Fetches content from each website
+3. 🤖 AI analyzes and finds something specific to admire about each company
+4. ✉️ Generates personalized sales emails
+5. 💾 **Immediately** updates the Google Sheet with the email (before processing next record)
+
+**Benefits:**
+- ✅ Process in batches (e.g., 5 emails at a time)
+- ✅ Resume anytime from where you left off
+- ✅ Control API usage and costs
+- ✅ Automatic retry (3 attempts) if generation fails
+- ✅ Each email is saved immediately (safe even if script stops)
+
+**Result**: Your Google Sheet now has complete data with personalized sales emails ready to send!
+
 ### Visual Workflow
 
 ```
@@ -168,23 +244,39 @@ The tool will interactively ask you:
 │ Output: 30 search results                                       │
 │         ↓                                                        │
 │ Google Sheet columns:                                            │
-│ [Timestamp | Query | Title | Link | Snippet | | | ]           │
+│ [Timestamp | Query | Title | Link | Snippet | | | | ]         │
 │                                       ↑                          │
-│                            Empty columns for contact info       │
+│                        Empty columns for extracted data         │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ Step 2: npm run extract (Extract Contacts)                      │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Reads all 30 website links from Sheet                         │
+│ • Reads website links from Sheet                                │
 │ • Visits each website with Firecrawl AI                         │
 │ • Extracts: Company Name, Phone, Email                          │
 │         ↓                                                        │
 │ Updates Google Sheet:                                            │
-│ [... | Link | Snippet | CompanyName | Phone | Email]           │
+│ [... | Link | Snippet | CompanyName | Phone | Email | ]        │
 │                        ↑─────────────────────────↑              │
 │                        Filled automatically                      │
 └─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Step 3: npm run email (Generate Sales Emails)                   │
+├─────────────────────────────────────────────────────────────────┤
+│ • Reads Company Names & Links from Sheet                        │
+│ • Fetches website content for each company                      │
+│ • AI analyzes and finds something to admire                     │
+│ • Generates personalized email for each                         │
+│         ↓                                                        │
+│ Updates Google Sheet:                                            │
+│ [... | CompanyName | Phone | Email | SalesEmail]               │
+│                                       ↑──────────↑              │
+│                              Personalized email added           │
+└─────────────────────────────────────────────────────────────────┘
+
+✅ COMPLETE! Your sheet now has search results + contact info + sales emails
 ```
 
 ## Example
