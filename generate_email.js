@@ -226,8 +226,9 @@ async function generateEmailWithRetry(companyName, webContent, maxRetries = 3) {
 
       // Choose a model (free options available)
       // Free models: 'meta-llama/llama-3.2-3b-instruct:free', 'google/gemma-2-9b-it:free'
-      // Quality models: 'deepseek/deepseek-chat' (very cheap), 'openai/gpt-4o' (best)
-      const model = 'deepseek/deepseek-chat-v3.1:free';
+      // Quality models: 'deepseek/deepseek-chat' (very cheap ~$0.0001/email), 'openai/gpt-4o' (best)
+      // Recommended: Use paid DeepSeek (extremely cheap) to avoid rate limits
+      const model = 'deepseek/deepseek-chat';
       
       console.log(`   Model: ${model}`);
 
@@ -292,9 +293,10 @@ Return a JSON object with:
         return null;
       }
 
-      // Wait before retrying
-      console.log(`  🔄 Retrying in 3 seconds...\n`);
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait before retrying (longer delay for rate limit errors)
+      const waitTime = error.message.includes('429') || error.message.includes('Rate limit') ? 10000 : 3000;
+      console.log(`  🔄 Retrying in ${waitTime/1000} seconds...\n`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
 
@@ -409,10 +411,11 @@ async function processBatch(sheets, spreadsheetId, sheetName, results, startInde
       failCount++;
     }
 
-    // Add a small delay to avoid rate limiting
+    // Add a delay to avoid rate limiting
+    // Increase delay if using free models to avoid 429 errors
     if (i < batchResults.length - 1) {
-      console.log(`  ⏸️  Waiting 2 seconds before next...\n`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log(`  ⏸️  Waiting 5 seconds before next...\n`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 
