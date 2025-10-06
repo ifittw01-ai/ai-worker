@@ -555,7 +555,7 @@ async function fetchWebContent(url) {
 async function generateEmailWithRetry(companyName, webContent, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const model = 'deepseek/deepseek-chat-v3.1:free';
+      const model = 'deepseek/deepseek-chat';
       
       const completion = await openrouter.chat.completions.create({
         model: model,
@@ -609,7 +609,9 @@ Return a JSON object with:
       if (attempt === maxRetries) {
         return null;
       }
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Longer delay for rate limit errors
+      const waitTime = error.message?.includes('429') || error.message?.includes('Rate limit') ? 10000 : 3000;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
 
@@ -726,7 +728,7 @@ app.post('/api/generate-emails', async (req, res) => {
       successCount++;
 
       if (i < batchResults.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
 
@@ -744,9 +746,13 @@ app.post('/api/generate-emails', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  console.log('🚀 伺服器已啟動！');
-  console.log('📊 請開啟瀏覽器使用網頁介面');
-});
+// Start server (for local development)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log('🚀 伺服器已啟動！');
+    console.log('📊 請開啟瀏覽器使用網頁介面');
+  });
+}
 
+// Export for Vercel serverless
+module.exports = app;
