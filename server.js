@@ -128,7 +128,12 @@ async function getExistingLinksFromSheet() {
   }
 }
 
-// Root endpoint
+// Root endpoint - serve the web interface
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// API root endpoint
 app.get('/api', (req, res) => {
   res.json({
     name: 'AI Worker API',
